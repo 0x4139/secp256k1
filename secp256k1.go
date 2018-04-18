@@ -5,14 +5,20 @@ package secp256k1
 import "C"
 import "unsafe"
 
-const hashLen int = 32
+const hsize int = 32
 
 func Start() {
 	C.secp256k1_start(C.SECP256K1_START_VERIFY | C.SECP256K1_START_SIGN)
 }
 
-func Stop() {
-	C.secp256k1_stop()
+func Seckey_verify(seckey [32]byte) bool {
+	success := C.secp256k1_ec_seckey_verify(sliceToUchar(seckey[:]))
+	return checkExitCode(success)
+}
+
+func Pubkey_verify(pubkey []byte) bool {
+	success := C.secp256k1_ec_pubkey_verify(sliceToUchar(pubkey), C.int(len(pubkey)))
+	return checkExitCode(success)
 }
 
 func Pubkey_create(seckey [32]byte, compressed bool) ([]byte, bool) {
@@ -26,46 +32,40 @@ func Pubkey_create(seckey [32]byte, compressed bool) ([]byte, bool) {
 	pubkeylen := C.int(0)
 	success := C.secp256k1_ec_pubkey_create(&pubkey[0],
 		&pubkeylen,
-		cBuf(seckey[:]),
+		sliceToUchar(seckey[:]),
 		comp)
 	return C.GoBytes(unsafe.Pointer(&pubkey[0]), pubkeylen), checkExitCode(success)
 }
 
-func Seckey_verify(seckey [32]byte) bool {
-	success := C.secp256k1_ec_seckey_verify(cBuf(seckey[:]))
-	return checkExitCode(success)
-}
-
-func Pubkey_verify(pubkey []byte) bool {
-	success := C.secp256k1_ec_pubkey_verify(cBuf(pubkey), C.int(len(pubkey)))
-	return checkExitCode(success)
-}
-
-func Sign(msgHash [hashLen]byte, seckey [32]byte, nonce *[32]byte) ([]byte, bool) {
+func Sign(msgHash [hsize]byte, seckey [32]byte, nonce *[32]byte) ([]byte, bool) {
 	var sig [72]C.uchar
 	siglen := C.int(len(sig))
-	success := C.secp256k1_ecdsa_sign(cBuf(msgHash[:]),
+	exitCode := C.secp256k1_ecdsa_sign(sliceToUchar(msgHash[:]),
 		&sig[0],
 		&siglen,
-		cBuf(seckey[:]),
+		sliceToUchar(seckey[:]),
 		nil,
 		unsafe.Pointer(nonce))
-	return C.GoBytes(unsafe.Pointer(&sig[0]), siglen), checkExitCode(success)
+	return C.GoBytes(unsafe.Pointer(&sig[0]), siglen), checkExitCode(exitCode)
 }
 
-func Verify(msgHash [hashLen]byte, sig []byte, pubkey []byte) bool {
-	success := C.secp256k1_ecdsa_verify(cBuf(msgHash[:]),
-		cBuf(sig),
+func Stop() {
+	C.secp256k1_stop()
+}
+
+func Verify(msgHash [hsize]byte, sig []byte, pubkey []byte) bool {
+	exitCode := C.secp256k1_ecdsa_verify(sliceToUchar(msgHash[:]),
+		sliceToUchar(sig),
 		C.int(len(sig)),
-		cBuf(pubkey),
+		sliceToUchar(pubkey),
 		C.int(len(pubkey)))
-	return checkExitCode(success)
+	return checkExitCode(exitCode)
 }
 
 func checkExitCode(success C.int) bool {
 	return success == 1
 }
 
-func cBuf(goSlice []byte) *C.uchar {
-	return (*C.uchar)(unsafe.Pointer(&goSlice[0]))
+func sliceToUchar(slice []byte) *C.uchar {
+	return (*C.uchar)(unsafe.Pointer(&slice[0]))
 }
