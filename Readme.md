@@ -6,7 +6,7 @@ Go bindings for bitcoin secp256k1
 ### Important: Be sure that you use golang < 1.9.4 due to the fact of this [Issue](https://github.com/golang/go/issues/23739)
 
 ### How to install
-====
+======
 ```
 cd $GOPATH/src/github.com/0x4139/secp256k1
 git submodule update
@@ -18,12 +18,12 @@ go clean && go install
 
 
 ### Docs
-====
+======
 Due to the fact that it implements a part of the functions of the bitcoin secp256k1 you can look directly in to the 
 [Header File](https://github.com/bitcoin-core/secp256k1/blob/3087bc4d75ec17287e71a36bda5df52a9ab8d854/include/secp256k1.h)
 
 ### License
-=====
+======
 
 ````
   DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
